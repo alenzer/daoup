@@ -10,7 +10,7 @@ use cw_utils::parse_reply_instantiate_data;
 
 use crate::error::ContractError;
 use crate::msg::{DumpStateResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{Campaign, Status};
+use crate::state::{Campaign, Status, FundToken};
 use crate::state::{State, FUNDING_TOKEN_ADDR, GOV_TOKEN_ADDR, STATE};
 
 const CONTRACT_NAME: &str = "crates.io:cw20-dao-crowdfund";
@@ -59,6 +59,7 @@ pub fn instantiate(
             amount: Uint128::zero(),
         },
         campaign_info: msg.campaign_info.clone(),
+        temp: msg.temp,
     };
     STATE.save(deps.storage, &state)?;
 

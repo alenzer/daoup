@@ -3,7 +3,7 @@ use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::state::{Campaign, Status};
+use crate::state::{Campaign, Status, FundToken};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -18,6 +18,8 @@ pub struct InstantiateMsg {
     pub funding_token_symbol: String,
 
     pub campaign_info: Campaign,
+
+    pub temp: FundToken,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -77,3 +79,4 @@ pub struct DumpStateResponse {
     pub funding_token_addr: Addr,
     pub version: String,
 }
+

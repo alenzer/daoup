@@ -53,6 +53,18 @@ pub enum Status {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum FundToken {
+    TOKEN {
+        addr: Addr,
+        amount: Uint128,
+    },
+    COIN {
+        coin: Coin
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
     pub status: Status,
 
@@ -64,6 +76,8 @@ pub struct State {
     pub funds_raised: Coin,
 
     pub campaign_info: Campaign,
+
+    pub temp: FundToken
 }
 
 pub const STATE: Item<State> = Item::new("state");

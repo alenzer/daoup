@@ -1,8 +1,13 @@
 [workspace]
-members = [
-    "cw20-dao-crowdfund",
-    "fee-manager",
-]
+members = ["contracts/*"]
+
+[profile.release.package.cw20-dao-crowdfund]
+codegen-units = 1
+incremental = false
+
+[profile.release.package.fee-manager]
+codegen-units = 1
+incremental = false
 
 [profile.release]
 opt-level = 3

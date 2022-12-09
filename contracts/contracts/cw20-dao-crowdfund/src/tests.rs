@@ -10,7 +10,7 @@ use anyhow::Result as AnyResult;
 
 use crate::{
     msg::{DumpStateResponse, ExecuteMsg, InstantiateMsg, QueryMsg},
-    state::{Campaign, Status},
+    state::{Campaign, FundToken, Status},
     ContractError,
 };
 
@@ -160,6 +160,7 @@ fn instantiate_fee_manager(app: &mut App, fee_manager_id: u64) -> Addr {
             amount: Uint128::from(PUBLIC_PAYMENT_AMOUNT),
         },
         public_listing_fee_receiver: ANOTHER_DAO_ADDR.to_string(),
+
     };
 
     app.instantiate_contract(
@@ -199,6 +200,12 @@ fn instantiate_msg_factory(
             profile_image_url: None,
             description_image_urls: vec!["https://moonphase.is/image.svg".to_string()],
             hidden,
+        },
+        temp: FundToken::COIN {
+            coin: Coin {
+                denom: "ujuno".to_string(),
+                amount: Uint128::from(100u128),
+            },
         },
     }
 }
