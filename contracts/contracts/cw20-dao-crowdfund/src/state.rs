@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Coin, Decimal, Uint128};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw_storage_plus::Item;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -54,14 +54,10 @@ pub enum Status {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum FundToken {
-    TOKEN {
-        addr: Addr,
-        amount: Uint128,
-    },
-    COIN {
-        coin: Coin
-    }
+pub struct FundToken {
+    pub is_token: bool,
+    pub addr: String,
+    pub amount: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -72,12 +68,10 @@ pub struct State {
     pub fee_manager_addr: Addr,
     pub creator: Addr,
 
-    pub funding_goal: Coin,
-    pub funds_raised: Coin,
+    pub funding_goal: FundToken,
+    pub funds_raised: FundToken,
 
     pub campaign_info: Campaign,
-
-    pub temp: FundToken
 }
 
 pub const STATE: Item<State> = Item::new("state");

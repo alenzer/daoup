@@ -1,2 +1,2 @@
-fdb688a38455d0182b8026bddb544c02ba5b61b7d1193d983ea9f0b089a2e57c  target/wasm32-unknown-unknown/release/cw20_dao_crowdfund.wasm
+e944e447b9de44a3db0737019af6b00813b60385d311d79586f325fd9dd55f8d  target/wasm32-unknown-unknown/release/cw20_dao_crowdfund.wasm
 f7c4a3671fd9bd55abdd7fae50998e2f26f2ed5222cfbd1f7299b4ad977da7ee  target/wasm32-unknown-unknown/release/fee_manager.wasm

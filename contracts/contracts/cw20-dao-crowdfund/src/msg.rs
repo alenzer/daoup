@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Coin};
+use cosmwasm_std::{Addr};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -13,13 +13,11 @@ pub struct InstantiateMsg {
     /// fundraising token.
     pub cw20_code_id: u64,
 
-    pub funding_goal: Coin,
+    pub funding_goal: FundToken,
     pub funding_token_name: String,
     pub funding_token_symbol: String,
 
     pub campaign_info: Campaign,
-
-    pub temp: FundToken,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -70,8 +68,8 @@ pub struct DumpStateResponse {
     pub dao_addr: Addr,
     pub fee_manager_addr: Addr,
     pub creator: Addr,
-    pub funding_goal: Coin,
-    pub funds_raised: Coin,
+    pub funding_goal: FundToken,
+    pub funds_raised: FundToken,
     pub funding_token_info: cw20::TokenInfoResponse,
     pub gov_token_info: cw20::TokenInfoResponse,
     pub campaign_info: Campaign,

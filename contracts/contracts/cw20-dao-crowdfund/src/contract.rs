@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Binary, Coin, Decimal, Deps, DepsMut, Env, Fraction, MessageInfo,
-    Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, Fraction,
+    MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw20::Cw20ReceiveMsg;
@@ -10,7 +10,7 @@ use cw_utils::parse_reply_instantiate_data;
 
 use crate::error::ContractError;
 use crate::msg::{DumpStateResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{Campaign, Status, FundToken};
+use crate::state::{Campaign, FundToken, Status};
 use crate::state::{State, FUNDING_TOKEN_ADDR, GOV_TOKEN_ADDR, STATE};
 
 const CONTRACT_NAME: &str = "crates.io:cw20-dao-crowdfund";
@@ -43,7 +43,7 @@ pub fn instantiate(
 
     if msg.funding_goal.amount == Uint128::zero() {
         return Err(ContractError::Instantiation(format!(
-            "funding goal is zero ({})",
+            "funding goal is zero ({:?})",
             msg.funding_goal
         )));
     }
@@ -54,12 +54,12 @@ pub fn instantiate(
         fee_manager_addr: fee_manager_addr.clone(),
         creator: info.sender.clone(),
         funding_goal: msg.funding_goal.clone(),
-        funds_raised: Coin {
-            denom: msg.funding_goal.denom,
+        funds_raised: FundToken {
+            is_token: msg.funding_goal.is_token,
+            addr: msg.funding_goal.addr,
             amount: Uint128::zero(),
         },
         campaign_info: msg.campaign_info.clone(),
-        temp: msg.temp,
     };
     STATE.save(deps.storage, &state)?;
 
@@ -196,8 +196,27 @@ pub fn execute_fund(
     funds: &[Coin],
     sender: Addr,
 ) -> Result<Response, ContractError> {
-    let mut state = STATE.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
 
+    if state.funding_goal.is_token == true {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Not Correct FundingToken".to_string(),
+        }));
+    }
+
+    let payment = funds
+        .iter()
+        .filter(|coin| coin.denom == state.funding_goal.addr)
+        .fold(Uint128::zero(), |accum, coin| coin.amount + accum);
+
+    fundraising(deps, payment, sender.to_string())
+}
+pub fn fundraising(
+    deps: DepsMut,
+    payment: Uint128,
+    sender: String,
+) -> Result<Response, ContractError> {
+    let mut state = STATE.load(deps.storage)?;
     let (token_price, initial_gov_token_balance) = match state.status {
         Status::Open {
             token_price,
@@ -205,12 +224,6 @@ pub fn execute_fund(
         } => Ok((token_price, initial_gov_token_balance)),
         _ => Err(ContractError::NotOpen {}),
     }?;
-
-    let payment = funds
-        .iter()
-        .filter(|coin| coin.denom == state.funding_goal.denom)
-        .fold(Uint128::zero(), |accum, coin| coin.amount + accum);
-
     // Don't allow funding over the funding goal.
     if state.funds_raised.amount + payment > state.funding_goal.amount {
         return Err(ContractError::FundingOverflow {});
@@ -260,15 +273,34 @@ pub fn execute_receive(
 ) -> Result<Response, ContractError> {
     let gov_token_addr = GOV_TOKEN_ADDR.load(deps.storage)?;
     let funding_token_addr = FUNDING_TOKEN_ADDR.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
+
     if sender == gov_token_addr {
         execute_receive_gov_tokens(deps, msg)
     } else if sender == funding_token_addr {
         execute_receive_funding_tokens(deps, msg, funding_token_addr)
+    } else if sender == state.funding_goal.addr {
+        execute_receive_fundgoal_token(deps, msg)
     } else {
         Err(ContractError::Unauthorized {})
     }
 }
+pub fn execute_receive_fundgoal_token(
+    deps: DepsMut,
+    msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    let state = STATE.load(deps.storage)?;
 
+    if state.funding_goal.is_token == false {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Not Correct FundingToken".to_string(),
+        }));
+    }
+
+    let payment = msg.amount;
+
+    fundraising(deps, payment, msg.sender)
+}
 pub fn execute_receive_gov_tokens(
     deps: DepsMut,
     msg: Cw20ReceiveMsg,
@@ -316,12 +348,23 @@ pub fn execute_receive_funding_tokens(
                 return Err(ContractError::SmallRefund { token_price });
             }
 
-            let bank_msg = BankMsg::Send {
-                to_address: sender.to_string(),
-                amount: vec![Coin {
-                    denom: state.funding_goal.denom.clone(),
-                    amount: native_owed,
-                }],
+            let bank_msg = if state.funding_goal.is_token {
+                CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: state.funding_goal.addr.clone(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: sender.to_string(),
+                        amount: native_owed,
+                    })?,
+                    funds: vec![],
+                })
+            } else {
+                CosmosMsg::Bank(BankMsg::Send {
+                    to_address: sender.to_string(),
+                    amount: vec![Coin {
+                        denom: state.funding_goal.addr.clone(),
+                        amount: native_owed,
+                    }],
+                })
             };
 
             // Burn the returned tokens.
@@ -387,23 +430,43 @@ pub fn execute_receive_funding_tokens(
             let dao_amount = native_to_transfer - fee_amount;
 
             // Transfer a proportional amount of funds to the DAO.
-            let dao_transfer = BankMsg::Send {
-                to_address: dao_addr,
-                amount: vec![Coin {
-                    denom: state.funding_goal.denom.clone(),
-                    amount: dao_amount,
-                }],
+            let dao_transfer = if state.funding_goal.is_token {
+                CosmosMsg::Wasm(WasmMsg::Execute { 
+                    contract_addr: state.funding_goal.addr.clone(), 
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: dao_addr,
+                        amount: dao_amount,
+                    })?, 
+                funds: vec![] })
+            }else {
+                CosmosMsg::Bank(BankMsg::Send {
+                    to_address: dao_addr,
+                    amount: vec![Coin {
+                        denom: state.funding_goal.addr.clone(),
+                        amount: dao_amount,
+                    }],
+                })
             };
 
             // If fee present, transfer fee.
             let response = if fee_manager_config.fee > Decimal::zero() {
                 // Transfer fee to the fee account.
-                let fee_transfer = BankMsg::Send {
-                    to_address: fee_manager_config.fee_receiver.to_string(),
-                    amount: vec![Coin {
-                        denom: state.funding_goal.denom,
-                        amount: fee_amount,
-                    }],
+                let fee_transfer = if state.funding_goal.is_token {
+                    CosmosMsg::Wasm(WasmMsg::Execute { 
+                        contract_addr: state.funding_goal.addr.clone(), 
+                        msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                            recipient: fee_manager_config.fee_receiver.to_string(),
+                            amount: fee_amount,
+                        })?, 
+                    funds: vec![] })
+                }else {
+                    CosmosMsg::Bank(BankMsg::Send {
+                        to_address: fee_manager_config.fee_receiver.to_string(),
+                        amount: vec![Coin {
+                            denom: state.funding_goal.addr,
+                            amount: fee_amount,
+                        }],
+                    })
                 };
 
                 Response::default().add_message(fee_transfer)
