@@ -331,6 +331,22 @@
       ],
       "native":false,
       "denom": "rac"
+    },
+    {
+      "id": "",
+      "pool_id": "JUNO-AQUA",
+      "chain_id": "juno-1",
+      "token_address": "juno1yyfuedz3wd6prhgma2njdgachc5rp3gjudmk0ey92r0fll055y9sddpasl",
+      "swap_address": "juno1m08vn7klzxh9tmqwajuux202xms2qz3uckle7zvtturcq7vk2yaqpcwxlz",
+      "symbol": "AQUA",
+      "name": "AQUA Token",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/racoon-supply-rac/junoswap-asset-list/main/images/racoon.png",
+      "tags": [
+        "cw20"
+      ],
+      "native":false,
+      "denom": "aqua"
     }
   ],
   "version": {

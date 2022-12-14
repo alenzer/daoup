@@ -3,6 +3,11 @@ import { Coin } from "@cosmjs/amino"
 import { CampaignStatus } from "@/types"
 
 declare global {
+  interface FundToken{
+    is_token: boolean,
+    addr: string,
+    amount: string,
+  }
   type TokenInfoResponse = {
     decimals: number
     name: string
@@ -15,10 +20,10 @@ declare global {
     creator: string
     dao_addr: string
     fee_manager_addr?: string // v3
-    funding_goal: Coin
+    funding_goal: FundToken
     funding_token_addr: string
     funding_token_info: TokenInfoResponse
-    funds_raised: Coin
+    funds_raised: FundToken
     gov_token_addr: string
     gov_token_info?: TokenInfoResponse
     status: CampaignDumpStateStatus

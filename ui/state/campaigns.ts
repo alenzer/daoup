@@ -350,7 +350,7 @@ export const filteredCampaigns = selectorFamily<
 >({
   key: "filteredCampaigns",
   get:
-    ({ filter, includeHidden = false, includePending = true, page, size }) =>
+    ({ filter, includeHidden = true, includePending = true, page, size }) =>
     async ({ get }) => {
       // Prevent infinite loop and return no data.
       if (size <= 0) return { campaigns: [], hasMore: true, error: null }

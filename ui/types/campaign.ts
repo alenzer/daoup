@@ -106,6 +106,7 @@ declare global {
     denom: string
     decimals: number
     swapAddress: string
+    tokenAddress: String,
   }
 }
 

@@ -2,6 +2,7 @@ export const rpcEndpoints = process.env.NEXT_PUBLIC_RPC_ENDPOINTS!.split(",")
 export const defaultRpcEndpoint = rpcEndpoints[0]
 export const restEndpoint = process.env.NEXT_PUBLIC_REST_ENDPOINT!
 
+export const aquaToken = process.env.NEXT_PUBLIC_AQUA_TOKEN
 export const chainId = process.env.NEXT_PUBLIC_CHAIN_ID!
 export const cw20CodeId = parseInt(process.env.NEXT_PUBLIC_CW20_CODE_ID!)
 
