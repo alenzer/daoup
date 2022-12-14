@@ -1,5 +1,4 @@
 import { TimeoutError } from "@cosmjs/stargate"
-import * as Sentry from "@sentry/nextjs"
 import { ReactNode } from "react"
 
 import { TxnPollTimeoutError } from "@/components"
@@ -182,7 +181,7 @@ export const parseError: ParseError = (
       (overrideCapture && overrideCapture[recognizedError]) ??
       captureCommonErrorMap[recognizedError]
     if (shouldCapture) {
-      Sentry.captureException(error, { tags, extra })
+      // Sentry.captureException(error, { tags, extra })
     }
 
     return ((transform && transform[recognizedError]) ||
@@ -190,7 +189,7 @@ export const parseError: ParseError = (
   }
 
   // Send to Sentry since we were not expecting it.
-  Sentry.captureException(error, { tags, extra })
+  // Sentry.captureException(error, { tags, extra })
 
   // If no recognized error, return error message by default.
   return message
