@@ -6,7 +6,7 @@ use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Res
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, ListMemberResponse, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, ListMemberResponse, QueryMsg, AddressPriority};
 use crate::state::{State, STATE};
 
 // version info for migration info
@@ -53,8 +53,11 @@ pub fn execute_add(deps: DepsMut, info: MessageInfo, dao: Addr) -> Result<Respon
         return Err(ContractError::Unauthorized {});
     }
 
-    if state.list.iter().find(|&x| x == &dao) == None {
-        state.list.push(dao);
+    if state.list.iter().find(|&x| x.addr == dao) == None {
+        state.list.push(AddressPriority{
+            addr: dao,
+            priority: 0,
+        });
     } else {
         return Err(ContractError::AlreadyAdded {});
     }
@@ -74,10 +77,10 @@ pub fn execute_remove(
         return Err(ContractError::Unauthorized {});
     }
 
-    if state.list.iter().find(|&x| *x == dao) == None {
+    if state.list.iter().find(|&x| x.addr == dao) == None {
         return Err(ContractError::NotExist {});
     }
-    state.list.retain(|x| *x != dao);
+    state.list.retain(|x| x.addr != dao);
     // Save config.
     STATE.save(deps.storage, &state)?;
 
