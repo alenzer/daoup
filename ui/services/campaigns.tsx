@@ -170,7 +170,7 @@ export const transformCampaign = (
     ...state
   } = campaignState ?? {}
 
-  const payToken = findPayTokenByDenom(state.funding_goal.denom)
+  const payToken = findPayTokenByDenom(state.funding_goal.addr)
 
   if (
     typeof campaignGovTokenBalance !== "number" ||

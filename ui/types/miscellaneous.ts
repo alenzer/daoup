@@ -9,7 +9,8 @@ declare global {
     campaign?: string
     wallet?: string
     token?: string
-    amount?: number
+    amount?: number,
+    
   }
 }
 
