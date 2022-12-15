@@ -3,12 +3,12 @@ import {
   payTokenSymbol,
   swapFee,
   swapSlippage,
-} from "@/config"
-import { convertMicroDenomToDenom } from "@/helpers"
+} from "@/config";
+import { convertMicroDenomToDenom } from "@/helpers";
 
-import tokenList from "./token_list.json"
+import tokenList from "./token_list.json";
 
-const allowedTokens = ["UST"]
+const allowedTokens = ["AQUA"];
 
 // Default chain symbol (probably juno(x))
 export const baseToken: PayToken = {
@@ -16,30 +16,44 @@ export const baseToken: PayToken = {
   denom: minPayTokenSymbol,
   decimals: 6,
   swapAddress: "",
-}
+  tokenAddress: "",
+};
 
 export const payTokens: PayToken[] = [
   baseToken,
   ...tokenList.tokens
     .filter(({ symbol }) => allowedTokens.includes(symbol))
-    .map(({ symbol, denom, decimals, swap_address: swapAddress }) => ({
-      symbol,
-      denom,
-      decimals,
-      swapAddress,
-    })),
-]
+    .map(
+      ({
+        symbol,
+        denom,
+        decimals,
+        swap_address: swapAddress,
+        token_address,
+      }) => ({
+        symbol,
+        denom,
+        decimals,
+        swapAddress,
+        tokenAddress: token_address,
+      })
+    ),
+];
 
-export const findPayTokenByDenom = (denom: string) =>
-  payTokens.find(({ denom: d }) => d === denom)
+export const findPayTokenByDenom = (addr: string) =>
+  payTokens.find(
+    ({ denom: d, tokenAddress }) =>
+      d.toLowerCase() === addr.toLowerCase() ||
+      tokenAddress.toLowerCase() === addr.toLowerCase()
+  );
 
 export const getPayTokenLabel = (denom: string) =>
-  findPayTokenByDenom(denom)?.symbol ?? "Unknown"
+  findPayTokenByDenom(denom)?.symbol ?? "Unknown";
 
 export const getNextPayTokenDenom = (denom: string) =>
   payTokens[
     (payTokens.findIndex(({ denom: d }) => d === denom) + 1) % payTokens.length
-  ].denom
+  ].denom;
 
 // swapPrice is in payToken/baseToken (i.e. price of 1 baseToken in payToken)
 export const getBaseTokenForMinPayToken = (
@@ -54,7 +68,7 @@ export const getBaseTokenForMinPayToken = (
       // Add the smallest unit in case of nonzero decimals after the truncation to ensure sufficient balance.
       convertMicroDenomToDenom(1, decimals)
     ).toFixed(decimals)
-  )
+  );
 
 // swapPrice is in payToken/baseToken (i.e. price of 1 baseToken in payToken)
 export const getMinPayTokenForBaseToken = (
@@ -72,4 +86,4 @@ export const getMinPayTokenForBaseToken = (
       (1 - swapSlippage) *
       (1 - swapFee)
     ).toFixed(decimals)
-  )
+  );

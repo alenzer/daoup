@@ -1,10 +1,10 @@
 import {
   CosmWasmClient,
   SigningCosmWasmClient,
-} from "@cosmjs/cosmwasm-stargate"
-import { coin, GasPrice } from "@cosmjs/stargate"
-import { findAttribute } from "@cosmjs/stargate/build/logs"
-import { Keplr } from "@keplr-wallet/types"
+} from "@cosmjs/cosmwasm-stargate";
+import { coin, GasPrice } from "@cosmjs/stargate";
+import { findAttribute } from "@cosmjs/stargate/build/logs";
+import { Keplr } from "@keplr-wallet/types";
 
 import {
   densContractAddress,
@@ -15,7 +15,7 @@ import {
   feeManagerAddress,
   gasPrice,
   rpcEndpoints,
-} from "@/config"
+} from "@/config";
 import {
   blockHeightToSeconds,
   CommonError,
@@ -23,19 +23,19 @@ import {
   convertMicroDenomToDenom,
   escrowAddressRegex,
   parseError,
-} from "@/helpers"
+} from "@/helpers";
 import {
   baseToken,
   findPayTokenByDenom,
   getBaseTokenForMinPayToken,
-} from "@/services"
-import { CampaignActionType } from "@/types"
+} from "@/services";
+import { CampaignActionType } from "@/types";
 
 export const getClient = async () => {
-  let rpcIndex = 0
+  let rpcIndex = 0;
   while (rpcIndex < rpcEndpoints.length) {
     try {
-      return await CosmWasmClient.connect(rpcEndpoints[rpcIndex])
+      return await CosmWasmClient.connect(rpcEndpoints[rpcIndex]);
     } catch (err) {
       console.error(
         parseError(
@@ -56,16 +56,16 @@ export const getClient = async () => {
             },
           }
         )
-      )
-      rpcIndex++
+      );
+      rpcIndex++;
     }
   }
-}
+};
 
 export const getSigningClient = async (
   signer: Awaited<ReturnType<Keplr["getOfflineSignerAuto"]>>
 ) => {
-  let rpcIndex = 0
+  let rpcIndex = 0;
   while (rpcIndex < rpcEndpoints.length) {
     try {
       return await SigningCosmWasmClient.connectWithSigner(
@@ -75,7 +75,7 @@ export const getSigningClient = async (
           gasPrice: GasPrice.fromString(gasPrice),
           broadcastTimeoutMs: 1000 * 60 * 2, // 2 minutes
         }
-      )
+      );
     } catch (err) {
       console.error(
         parseError(
@@ -96,11 +96,11 @@ export const getSigningClient = async (
             },
           }
         )
-      )
-      rpcIndex++
+      );
+      rpcIndex++;
     }
   }
-}
+};
 
 export const getCW20TokenInfo = async (
   client: CosmWasmClient,
@@ -108,33 +108,38 @@ export const getCW20TokenInfo = async (
 ): Promise<TokenInfoResponse> =>
   client.queryContractSmart(tokenAddress, {
     token_info: {},
-  })
+  });
 
 export const getCW20WalletTokenBalance = async (
   client: CosmWasmClient,
   tokenAddress: string,
   walletAddress: string
 ) => {
-  const info = await getCW20TokenInfo(client, tokenAddress)
+  const info = await getCW20TokenInfo(client, tokenAddress);
   const { balance } = await client.queryContractSmart(tokenAddress, {
     balance: { address: walletAddress },
-  })
-  return convertMicroDenomToDenom(balance, info.decimals)
-}
+  });
+  return convertMicroDenomToDenom(balance, info.decimals);
+};
 
-export const getFeaturedAddresses = async (client: CosmWasmClient) =>
-  (
-    (await client.queryContractSmart(featuredListContractAddress, {
-      list_members: {},
-    })) as AddressPriorityListResponse
-  ).members.map(({ addr }) => addr)
+export const getFeaturedAddresses = async (client: CosmWasmClient) => {
+  try {
+    return (
+      (await client.queryContractSmart(featuredListContractAddress, {
+        list_members: {},
+      })) as AddressPriorityListResponse
+    ).members.map(({ addr }) => addr);
+  } catch (e) {
+    return [];
+  }
+};
 
 export const getDenyListAddresses = async (client: CosmWasmClient) =>
   (
     (await client.queryContractSmart(denyListContractAddress, {
       list_members: {},
     })) as AddressPriorityListResponse
-  ).members.map(({ addr }) => addr)
+  ).members.map(({ addr }) => addr);
 
 export const getCampaignState = async (
   client: CosmWasmClient,
@@ -142,11 +147,11 @@ export const getCampaignState = async (
 ): Promise<CampaignDumpStateResponse> =>
   client.queryContractSmart(campaignAddress, {
     dump_state: {},
-  })
+  });
 
 export const getDENSAddress = async (client: CosmWasmClient, name: string) => {
   // DENS does not exist on testnet.
-  if (!densContractAddress || !densRootTokenName) return null
+  if (!densContractAddress || !densRootTokenName) return null;
 
   try {
     const {
@@ -155,17 +160,17 @@ export const getDENSAddress = async (client: CosmWasmClient, name: string) => {
       nft_info: {
         token_id: `${densRootTokenName}::${name.toLowerCase()}`,
       },
-    })
+    });
 
     // Ensure public_bio is a valid contract address.
     if (
       typeof public_bio !== "string" ||
       !escrowAddressRegex.test(public_bio)
     ) {
-      return null
+      return null;
     }
 
-    return public_bio
+    return public_bio;
   } catch (error) {
     console.error(
       parseError(
@@ -180,16 +185,16 @@ export const getDENSAddress = async (client: CosmWasmClient, name: string) => {
           },
         }
       )
-    )
-    return null
+    );
+    return null;
   }
-}
+};
 
 export const getDENSNames = async (
   client: CosmWasmClient
 ): Promise<string[]> => {
   // DENS does not exist on testnet.
-  if (!densContractAddress || !densRootTokenName) return []
+  if (!densContractAddress || !densRootTokenName) return [];
 
   try {
     const { tokens } = await client.queryContractSmart(densContractAddress, {
@@ -197,19 +202,19 @@ export const getDENSNames = async (
         token_id: densRootTokenName,
         owner: densRootTokenOwner,
       },
-    })
+    });
 
-    if (!Array.isArray(tokens)) return []
+    if (!Array.isArray(tokens)) return [];
 
     // Strip root path from beginning.
     return tokens.map((token: string) =>
       token.replace(`${densRootTokenName}::`, "")
-    )
+    );
   } catch (error) {
-    console.error(parseError(error, { source: "getDENSNames" }))
-    return []
+    console.error(parseError(error, { source: "getDENSNames" }));
+    return [];
   }
-}
+};
 
 export const createDENSAddressMap = (
   names: string[],
@@ -221,7 +226,7 @@ export const createDENSAddressMap = (
       ...(address ? { [address]: names[index] } : {}),
     }),
     {}
-  )
+  );
 
 export const createDAOProposalForCampaign = async (
   client: SigningCosmWasmClient,
@@ -231,7 +236,7 @@ export const createDAOProposalForCampaign = async (
   dao: any,
   msg: any
 ) => {
-  const daoProposalDeposit = Number(dao.config?.proposal_deposit)
+  const daoProposalDeposit = Number(dao.config?.proposal_deposit);
   if (!isNaN(daoProposalDeposit) && daoProposalDeposit > 0)
     await client.execute(
       walletAddress,
@@ -243,26 +248,26 @@ export const createDAOProposalForCampaign = async (
         },
       },
       "auto"
-    )
+    );
 
   const response = await client.execute(
     walletAddress,
     campaign.dao.address,
     msg,
     "auto"
-  )
+  );
 
-  return findAttribute(response.logs, "wasm", "proposal_id").value
-}
+  return findAttribute(response.logs, "wasm", "proposal_id").value;
+};
 
 export const getNativeTokenBalance = async (
   client: SigningCosmWasmClient,
   walletAddress: string,
   token: PayToken
 ): Promise<number> => {
-  const coin = await client.getBalance(walletAddress, token.denom)
-  return convertMicroDenomToDenom(coin?.amount ?? 0, token.decimals)
-}
+  const coin = await client.getBalance(walletAddress, token.denom);
+  return convertMicroDenomToDenom(coin?.amount ?? 0, token.decimals);
+};
 
 // Price of token in baseToken.
 export const getTokenPricePerBase = async (
@@ -277,9 +282,9 @@ export const getTokenPricePerBase = async (
         baseToken.decimals
       ).toString(),
     },
-  })
-  return convertMicroDenomToDenom(token2_amount, token.decimals)
-}
+  });
+  return convertMicroDenomToDenom(token2_amount, token.decimals);
+};
 
 // Swaps baseToken for outputToken and receive at least minOutput outputTokens.
 export const swapToken = async (
@@ -294,16 +299,16 @@ export const swapToken = async (
     minOutput,
     swapPrice,
     baseToken.decimals
-  )
+  );
 
   const microInputAmount = convertDenomToMicroDenom(
     inputAmount,
     baseToken.decimals
-  ).toString()
+  ).toString();
   const microMinOutputAmount = convertDenomToMicroDenom(
     minOutput,
     outputToken.decimals
-  ).toString()
+  ).toString();
 
   const msg = {
     swap: {
@@ -311,7 +316,7 @@ export const swapToken = async (
       input_amount: microInputAmount,
       min_output: microMinOutputAmount,
     },
-  }
+  };
   const response = await client.execute(
     walletAddress,
     outputToken.swapAddress,
@@ -319,9 +324,9 @@ export const swapToken = async (
     "auto",
     undefined,
     [coin(microInputAmount, baseToken.denom)]
-  )
-  return response
-}
+  );
+  return response;
+};
 
 export const contractInstantiationBlockHeight = async (
   client: CosmWasmClient,
@@ -330,40 +335,40 @@ export const contractInstantiationBlockHeight = async (
   try {
     const events = await client.searchTx({
       tags: [{ key: "instantiate._contract_address", value: address }],
-    })
+    });
     if (!events.length) {
-      return null
+      return null;
     }
 
-    return events[0].height
+    return events[0].height;
   } catch (error) {
     console.error(
       parseError(error, {
         source: "contractInstantiationBlockHeight",
         campaign: address,
       })
-    )
-    return null
+    );
+    return null;
   }
-}
+};
 
 export const getDateFromBlockHeight = async (
   client: CosmWasmClient,
   blockHeight: number
 ): Promise<Date | null> => {
   try {
-    const block = await client.getBlock(blockHeight)
-    return new Date(Date.parse(block.header.time))
+    const block = await client.getBlock(blockHeight);
+    return new Date(Date.parse(block.header.time));
   } catch (error) {
     console.error(
       parseError(error, {
         source: "getDateFromBlockHeight",
         blockHeight,
       })
-    )
-    return null
+    );
+    return null;
   }
-}
+};
 
 export const getCampaignActions = async (
   client: CosmWasmClient,
@@ -372,7 +377,7 @@ export const getCampaignActions = async (
   minBlockHeight?: number,
   maxBlockHeight?: number
 ): Promise<CampaignAction[]> => {
-  let events: Awaited<ReturnType<typeof client["searchTx"]>> = []
+  let events: Awaited<ReturnType<typeof client["searchTx"]>> = [];
   try {
     // Get all of the wasm messages involving this contract.
     events = await client.searchTx(
@@ -383,7 +388,7 @@ export const getCampaignActions = async (
         minHeight: minBlockHeight && Math.max(minBlockHeight, 0),
         maxHeight: maxBlockHeight,
       }
-    )
+    );
   } catch (error) {
     console.error(
       parseError(error, {
@@ -393,7 +398,7 @@ export const getCampaignActions = async (
         minBlockHeight,
         maxBlockHeight,
       })
-    )
+    );
   }
 
   const wasms = events
@@ -407,32 +412,34 @@ export const getCampaignActions = async (
       wasm: l.log[0].events.find((e: any) => e.type === "wasm"),
       height: l.height,
     }))
-    .filter((w) => !!w.wasm)
+    .filter((w) => !!w.wasm);
 
   // Get the messages that are fund messages.
   const funds = wasms.filter((wasm) =>
     wasm.wasm.attributes.some((a: any) => a.value === "fund")
-  )
+  );
 
   // Get the messages that are refund messages.
   const refunds = wasms.filter((wasm) =>
     wasm.wasm.attributes.some((a: any) => a.value === "refund")
-  )
+  );
 
   // Extract the amount and sender.
   const fundActions: CampaignAction[] = funds.map((fund) => {
     let amount = convertMicroDenomToDenom(
       fund.wasm.attributes.find((a: any) => a.key === "amount")?.value,
       campaign.payToken.decimals
-    )
+    );
     let address = fund.wasm.attributes.find((a: any) => a.key === "sender")
-      ?.value as string
+      ?.value as string;
 
-    let when
+    let when;
     if (currentBlockHeight !== null) {
-      const elapsedTime = blockHeightToSeconds(currentBlockHeight - fund.height)
-      when = new Date()
-      when.setSeconds(when.getSeconds() - elapsedTime)
+      const elapsedTime = blockHeightToSeconds(
+        currentBlockHeight - fund.height
+      );
+      when = new Date();
+      when.setSeconds(when.getSeconds() - elapsedTime);
     }
 
     return {
@@ -440,21 +447,23 @@ export const getCampaignActions = async (
       address,
       amount,
       when,
-    }
-  })
+    };
+  });
   const refundActions: CampaignAction[] = refunds.map((fund) => {
     let amount = convertMicroDenomToDenom(
       fund.wasm.attributes.find((a: any) => a.key === "native_returned")?.value,
       campaign.payToken.decimals
-    )
+    );
     let address = fund.wasm.attributes.find((a: any) => a.key === "sender")
-      ?.value as string
+      ?.value as string;
 
-    let when
+    let when;
     if (currentBlockHeight !== null) {
-      const elapsedTime = blockHeightToSeconds(currentBlockHeight - fund.height)
-      when = new Date()
-      when.setSeconds(when.getSeconds() - elapsedTime)
+      const elapsedTime = blockHeightToSeconds(
+        currentBlockHeight - fund.height
+      );
+      when = new Date();
+      when.setSeconds(when.getSeconds() - elapsedTime);
     }
 
     return {
@@ -462,18 +471,18 @@ export const getCampaignActions = async (
       address,
       amount,
       when,
-    }
-  })
+    };
+  });
 
   // Combine and sort descending (most recent first).
   const actions = [...refundActions, ...fundActions].sort((a, b) => {
-    if (a.when === undefined) return 1
-    if (b.when === undefined) return -1
-    return b.when.getTime() - a.when.getTime()
-  })
+    if (a.when === undefined) return 1;
+    if (b.when === undefined) return -1;
+    return b.when.getTime() - a.when.getTime();
+  });
 
-  return actions
-}
+  return actions;
+};
 
 export const getFeeManagerConfig = async (
   client: CosmWasmClient
@@ -481,12 +490,12 @@ export const getFeeManagerConfig = async (
   const { config }: FeeManagerGetConfigResponse =
     await client.queryContractSmart(feeManagerAddress, {
       get_config: {},
-    })
+    });
 
   const publicListingFeeToken = findPayTokenByDenom(
     config.public_listing_fee.denom
-  )
-  if (!publicListingFeeToken) return null
+  );
+  if (!publicListingFeeToken) return null;
 
   return {
     fee: parseFloat(config.fee),
@@ -494,5 +503,5 @@ export const getFeeManagerConfig = async (
       token: publicListingFeeToken,
       coin: config.public_listing_fee,
     },
-  }
-}
+  };
+};
