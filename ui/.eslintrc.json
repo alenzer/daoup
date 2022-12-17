@@ -12,6 +12,6 @@
     "simple-import-sort/exports": "error",
     "prettier/prettier": "error",
     "react/no-children-prop": "off",
-    "unused-imports/no-unused-imports": "error"
+    "unused-imports/no-unused-imports": "error",
   }
 }

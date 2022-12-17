@@ -5,6 +5,7 @@ import { readFileSync } from "fs";
 
 const CROWDFUND_PATH = "../cw20_dao_crowdfund.wasm";
 const FEEMANAGER_PATH = "../fee_manager.wasm";
+const FEATURE_PATH = "../feature.wasm";
 
 // Get the wallet seed phrase from the environment variable.
 const JUNO_SEED = process.env.JUNO_SEED;
@@ -38,7 +39,8 @@ let CROWDFUND_CONTRACT =
   "juno1ppufqmkthpe3emwdwm029c9gf6zc4v32evyxjsmaw4ceavaqdp3q3wlttc";
 let FEEMANAGER_CONTRACT =
   "juno150kv85agxsg7gpq7an7pwwwj54akr933nnvy458ke8naevv4ngssplyqgq";
-
+let FEATURE_CONTRACT = 
+  ""
 run();
 
 async function run() {
@@ -87,7 +89,14 @@ async function run() {
     });
     console.log(CROWDFUND_CONTRACT);
   }
+  if (FEATURE_CONTRACT == "") {
+    console.log("Deploying Feature Contract");
+    const featureCodeId = await upload(FEATURE_PATH)
+    console.log("instantiating Feature contract");
 
+    FEATURE_CONTRACT = await instantiate(featureCodeId, {});
+    console.log(FEATURE_CONTRACT);
+  }
   console.log("configuring");
   await config();
 
@@ -110,23 +119,36 @@ async function config() {
   const address = (await signer.getAccounts())[0].address;
 
   try {
+    // const res = await client.execute(
+    //   address,
+    //   FEEMANAGER_CONTRACT,
+    //   {
+    //     update: {
+    //       config: {
+    //         fee: "0.1",
+    //         fee_receiver: "juno12v06zrrhw0vs83t83svsddgl4ndfmk9c327gsu",
+
+    //         public_listing_fee: { denom: "ujuno", amount: "100" },
+    //         public_listing_fee_receiver:
+    //           "juno12v06zrrhw0vs83t83svsddgl4ndfmk9c327gsu",
+    //       },
+    //     },
+    //   },
+    //   "auto",
+    //   "update feemanger"
+    // );
+    // console.log(res);
+
     const res = await client.execute(
       address,
-      FEEMANAGER_CONTRACT,
+      FEATURE_CONTRACT,
       {
-        update: {
-          config: {
-            fee: "0.1",
-            fee_receiver: "juno12v06zrrhw0vs83t83svsddgl4ndfmk9c327gsu",
-
-            public_listing_fee: { denom: "ujuno", amount: "100" },
-            public_listing_fee_receiver:
-              "juno12v06zrrhw0vs83t83svsddgl4ndfmk9c327gsu",
-          },
+        add: {
+          dao: "juno1pzzahv23hnlapxfk9v0nep65m2nhg9hzygvczxd5wxzjh8z2j9qs5mhpf0",
         },
       },
       "auto",
-      "update feemanger"
+      "add dao"
     );
     console.log(res);
   } catch (e) {
